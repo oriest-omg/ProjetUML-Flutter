@@ -1,19 +1,32 @@
 import 'package:flutter/material.dart';
-import 'InscriptionPage.dart';
+import 'package:porjet_uml/model/etudiant.dart';
+import 'package:porjet_uml/widgets/home_page.dart';
+import 'inscription_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
+import 'dart:convert';
+
 
 class Connexion extends StatefulWidget {
   const Connexion({Key? key}) : super(key: key);
+
 
   @override
   _ConnexionState createState() => _ConnexionState();
 }
 
 class _ConnexionState extends State<Connexion> {
+
+  late String username ='';
+  late String password;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.greenAccent,
-      body: Container(
+      body: SingleChildScrollView
+        (
+        child: Container(
         margin : EdgeInsets.only(top: 200),
         alignment: Alignment.center,
         child : Center(
@@ -40,6 +53,9 @@ class _ConnexionState extends State<Connexion> {
                           decoration: const InputDecoration(
                             hintText: 'Enter your username',
                           ),
+                          onChanged: (value)=>{
+                            username = value
+                          },
                           validator: (String? value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter some text';
@@ -59,18 +75,25 @@ class _ConnexionState extends State<Connexion> {
                             child: TextFormField(
                           style: const TextStyle(fontSize: 20.0),
                           decoration: const InputDecoration(
-                            hintText: 'Enter your username',
+                            hintText: 'Enter your password',
                           ),
+                              onChanged: (value)=>{
+                                password = value
+                              },
                           validator: (String? value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter some text';
-                            }
+                            }else
+                              {
+                                password = value;
+                                print(password);
+                              }
                             return null;
                           },
                         )),
                       ),
                     ]),
-                    TextButton(onPressed: ()=>{}, child: Text("Connexion"))
+                    TextButton(onPressed: ()=>{ appelApi()/*PageAccueil()*/}, child: Text("Connexion"))
                   ],
                 ),
               )),
@@ -78,6 +101,7 @@ class _ConnexionState extends State<Connexion> {
         ],
       )),
         ),
+      )
     );
   }
   void PageInscription()
@@ -87,6 +111,61 @@ class _ConnexionState extends State<Connexion> {
       MaterialPageRoute(builder: (context) => InscriptionPage()),
     );
   }
+  void Erreur()
+  {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        action: SnackBarAction(
+          textColor: Colors.red,
+          label: 'Erreur',
+          onPressed: () {
+            // Code to execute.
+          },
+        ),
+        content: const Text('Erreur de connexion'),
+        duration: const Duration(milliseconds: 1500),
+        // width:280.0,// Width of the SnackBar.
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8.0, // Inner padding for SnackBar content.
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+      ),
+    );
+  }
+
+
+  void PageAccueil()
+  {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => HomePage()),
+    );
+  }
+
+  void appelApi() async {
+      final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/etudiants'));
+      if (response.statusCode == 200) {
+        var etds = jsonDecode(response.body)["hydra:member"];
+        bool connection=false;
+        for(var etudiant in etds)
+          {
+            Etudiant etd = Etudiant.fromJson(etudiant);
+            if(username == etd.username && password == etd.password) {
+              connection = true;
+              PageAccueil();
+            }
+          }
+        if(!connection)
+          {
+          Erreur();
+          }
+      } else {
+        print('Erreur');
+      }
+    }
 
 }
 
